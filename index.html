@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wander With Suzy</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="">
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
+
+<style>
+  :root{
+    --cream:#FFF8F0;
+    --coral:#FF6B6B;
+    --coral-dark:#E85555;
+    --forest:#2D6A4F;
+    --ink:#3A3129;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Poppins', sans-serif;
+    font-weight:400;
+    line-height:1.6;
+  }
+  h1,h2,h3,.display{
+    font-family:'Playfair Display', serif;
+  }
+  a{ text-decoration:none; }
+  img{ max-width:100%; display:block; }
+
+  /* ---------- Nav ---------- */
+  header.nav{
+    position:sticky;
+    top:0;
+    z-index:1000;
+    background:rgba(255,248,240,0.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid rgba(45,106,79,0.15);
+  }
+  .nav-inner{
+    max-width:1100px;
+    margin:0 auto;
+    padding:16px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .nav-logo{
+    font-family:'Playfair Display', serif;
+    font-weight:700;
+    font-size:1.25rem;
+    color:var(--forest);
+  }
+  .nav-logo span{ color:var(--coral); }
+  .nav-links{
+    display:flex;
+    gap:32px;
+    list-style:none;
+    margin:0;
+    padding:0;
+  }
+  .nav-links a{
+    color:var(--ink);
+    font-weight:500;
+    font-size:0.95rem;
+    position:relative;
+    padding:4px 2px;
+    transition:color .2s ease;
+  }
+  .nav-links a:hover{ color:var(--coral); }
+  .nav-links a.current{ color:var(--coral); }
+  .nav-links a::after{
+    content:"";
+    position:absolute;
+    left:0; bottom:-2px;
+    width:0; height:2px;
+    background:var(--coral);
+    transition:width .25s ease;
+  }
+  .nav-links a:hover::after, .nav-links a.current::after{ width:100%; }
+  .nav-toggle{
+    display:none;
+    flex-direction:column;
+    gap:5px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:6px;
+  }
+  .nav-toggle span{
+    width:24px; height:2px;
+    background:var(--forest);
+    display:block;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    max-width:1100px;
+    margin:0 auto;
+    padding:88px 24px 64px;
+    text-align:center;
+  }
+  .hero h1{
+    font-size:clamp(2.6rem, 6vw, 4.5rem);
+    font-weight:800;
+    color:var(--forest);
+    margin:0 0 18px;
+    letter-spacing:-0.5px;
+  }
+  .hero h1 .accent{ color:var(--coral); }
+  .hero p.tagline{
+    font-size:clamp(1.05rem, 2vw, 1.35rem);
+    color:#6b5f52;
+    font-weight:300;
+    max-width:560px;
+    margin:0 auto;
+    letter-spacing:0.3px;
+  }
+  .hero .divider{
+    width:64px; height:3px;
+    background:var(--coral);
+    margin:26px auto 0;
+    border-radius:2px;
+  }
+
+  /* ---------- Section headings ---------- */
+  .section{
+    max-width:1100px;
+    margin:0 auto;
+    padding:40px 24px;
+  }
+  .section-title{
+    text-align:center;
+    font-size:2rem;
+    color:var(--forest);
+    margin:0 0 6px;
+  }
+  .section-sub{
+    text-align:center;
+    color:#8a7c6d;
+    font-size:0.95rem;
+    margin:0 0 36px;
+    font-weight:300;
+  }
+
+  /* ---------- Filters ---------- */
+  .filters{
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:28px;
+  }
+  .filter-btn{
+    border:2px solid var(--forest);
+    background:transparent;
+    color:var(--forest);
+    padding:9px 22px;
+    border-radius:999px;
+    font-family:'Poppins', sans-serif;
+    font-size:0.9rem;
+    font-weight:500;
+    cursor:pointer;
+    transition:all .2s ease;
+  }
+  .filter-btn:hover{
+    background:rgba(45,106,79,0.08);
+  }
+  .filter-btn.active{
+    background:var(--coral);
+    border-color:var(--coral);
+    color:#fff;
+  }
+
+  /* ---------- Map ---------- */
+  .map-wrap{
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 12px 32px rgba(45,106,79,0.15);
+    border:4px solid #fff;
+  }
+  #map{
+    height:520px;
+    width:100%;
+    background:#eae2d6;
+  }
+
+  .cluster-badge{
+    background:var(--coral);
+    color:#fff;
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Poppins', sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    box-shadow:0 0 0 6px rgba(255,107,107,0.25);
+    transform-origin:50% 50%;
+  }
+
+  @keyframes pin-drop{
+    0%   { transform:scale(0) translateY(-16px); opacity:0; }
+    55%  { transform:scale(1.25) translateY(3px); opacity:1; }
+    75%  { transform:scale(0.9) translateY(-1px); }
+    100% { transform:scale(1) translateY(0); }
+  }
+  .pin-drop-anim{
+    animation:pin-drop 0.55s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  path.pin-drop-anim{
+    transform-box:fill-box;
+    transform-origin:50% 50%;
+  }
+
+  .leaflet-popup-content-wrapper,
+  .leaflet-popup-tip{
+    background:var(--cream) !important;
+    box-shadow:0 12px 32px rgba(45,106,79,0.2) !important;
+  }
+  .leaflet-popup-content-wrapper{
+    border-radius:14px;
+    padding:0;
+    overflow:hidden;
+  }
+  .leaflet-popup-content{ margin:0; width:240px !important; }
+  .leaflet-container a.leaflet-popup-close-button{
+    top:10px !important;
+    right:10px !important;
+    width:24px !important;
+    height:24px !important;
+    line-height:22px !important;
+    text-align:center !important;
+    background:var(--coral) !important;
+    color:#fff !important;
+    border-radius:50% !important;
+    font-size:16px !important;
+    font-weight:700 !important;
+    text-shadow:none !important;
+    box-shadow:0 2px 6px rgba(0,0,0,0.25) !important;
+    transition:background .2s ease, transform .2s ease;
+    z-index:10;
+  }
+  .leaflet-container a.leaflet-popup-close-button:hover,
+  .leaflet-container a.leaflet-popup-close-button:focus{
+    background:var(--coral-dark) !important;
+    color:#fff !important;
+    transform:scale(1.08);
+  }
+
+  .popup-card img{
+    width:100%;
+    height:180px;
+    object-fit:cover;
+    display:block;
+    border-radius:14px 14px 0 0;
+  }
+  .popup-card .popup-body{
+    padding:14px 16px 16px;
+  }
+  .popup-card .popup-tag{
+    display:inline-block;
+    font-size:0.68rem;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--forest);
+    background:rgba(45,106,79,0.1);
+    padding:3px 9px;
+    border-radius:999px;
+    margin-bottom:8px;
+    font-weight:600;
+  }
+  .popup-card h3{
+    margin:0 0 6px;
+    font-size:1.1rem;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .popup-card p{
+    margin:0 0 10px;
+    font-size:0.82rem;
+    color:#6b5f52;
+    line-height:1.5;
+  }
+  .popup-card .read-more{
+    color:var(--coral);
+    font-weight:600;
+    font-size:0.85rem;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+  }
+  .popup-card .read-more:hover{ text-decoration:underline; }
+
+  /* ---------- Blog ---------- */
+  .blog-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:28px;
+  }
+  .blog-card{
+    background:#fff;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 6px 18px rgba(45,106,79,0.08);
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .blog-card:hover{
+    transform:translateY(-6px);
+    box-shadow:0 14px 28px rgba(45,106,79,0.15);
+  }
+  .blog-card img{
+    width:100%;
+    height:190px;
+    object-fit:cover;
+  }
+  .blog-card-body{ padding:20px; }
+  .blog-date{
+    font-size:0.75rem;
+    color:var(--coral);
+    font-weight:600;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .blog-card h3{
+    margin:0 0 10px;
+    font-size:1.2rem;
+    color:var(--forest);
+  }
+  .blog-card p{
+    margin:0 0 14px;
+    font-size:0.88rem;
+    color:#6b5f52;
+  }
+  .blog-card .read-more{
+    color:var(--coral);
+    font-weight:600;
+    font-size:0.85rem;
+  }
+  .blog-card .read-more:hover{ text-decoration:underline; }
+
+  /* ---------- Scroll reveal ---------- */
+  @keyframes fade-up{
+    from{ opacity:0; transform:translateY(20px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .reveal{ opacity:0; transform:translateY(20px); }
+  .reveal.is-visible{ animation:fade-up .6s ease both; }
+  @media (prefers-reduced-motion: reduce){
+    .reveal{ opacity:1; transform:none; animation:none; }
+  }
+
+  /* ---------- Footer ---------- */
+  .site-footer{
+    margin-top:40px;
+    background:var(--cream);
+    border-top:3px solid var(--forest);
+    padding:40px 24px 30px;
+  }
+  .footer-inner{
+    max-width:1100px;
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+    text-align:center;
+  }
+  .footer-social{
+    display:flex;
+    gap:16px;
+  }
+  .footer-social a{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    border:1.5px solid var(--coral);
+    color:var(--coral);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .2s ease, color .2s ease, transform .2s ease;
+  }
+  .footer-social a:hover{
+    background:var(--coral);
+    color:#fff;
+    transform:translateY(-3px);
+  }
+  .footer-social svg{ width:18px; height:18px; }
+  .footer-copyright{
+    margin:0;
+    font-size:0.85rem;
+    color:#8a7c6d;
+  }
+  .footer-top{
+    font-size:0.82rem;
+    font-weight:600;
+    color:var(--coral);
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+  }
+  .footer-top:hover{ text-decoration:underline; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px){
+    .blog-grid{ grid-template-columns:repeat(2, 1fr); }
+  }
+
+  @media (max-width: 640px){
+    .nav-links{
+      position:absolute;
+      top:100%; left:0; right:0;
+      background:var(--cream);
+      flex-direction:column;
+      align-items:center;
+      gap:0;
+      max-height:0;
+      overflow:hidden;
+      transition:max-height .3s ease;
+      border-bottom:1px solid rgba(45,106,79,0.15);
+    }
+    .nav-links.open{ max-height:220px; }
+    .nav-links li{ width:100%; text-align:center; }
+    .nav-links a{
+      display:block;
+      padding:14px 0;
+    }
+    .nav-links a::after{ display:none; }
+    .nav-toggle{ display:flex; }
+
+    .hero{ padding:64px 20px 44px; }
+    #map{ height:400px; }
+    .blog-grid{ grid-template-columns:1fr; }
+    .filters{ gap:10px; }
+    .filter-btn{ padding:8px 16px; font-size:0.85rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a href="#home" class="nav-logo">Wander <span>With Suzy</span></a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#home" class="current">Home</a></li>
+      <li><a href="./blog.html">Blog</a></li>
+      <li><a href="./about.html">About</a></li>
+    </ul>
+  </div>
+</header>
+
+<section class="hero" id="home" data-reveal-group>
+  <h1 class="reveal">Wander <span class="accent">With Suzy</span></h1>
+  <p class="tagline reveal">Stories From Every Corner of the World.</p>
+  <div class="divider reveal"></div>
+</section>
+
+<section class="section" id="map-section" data-reveal-group>
+  <h2 class="section-title reveal">Where I've Been</h2>
+  <p class="section-sub reveal">Click a pin to read the story behind it.</p>
+
+  <div class="filters" id="filters">
+    <button class="filter-btn active reveal" data-filter="All">All</button>
+    <button class="filter-btn reveal" data-filter="Culture">Culture</button>
+    <button class="filter-btn reveal" data-filter="Food">Food</button>
+    <button class="filter-btn reveal" data-filter="Adventure">Adventure</button>
+  </div>
+
+  <div class="map-wrap reveal">
+    <div id="map"></div>
+  </div>
+</section>
+
+<section class="section" id="blog" data-reveal-group>
+  <h2 class="section-title reveal">Latest Stories</h2>
+  <p class="section-sub reveal">Fresh off the plane and onto the page.</p>
+
+  <div class="blog-grid">
+    <article class="blog-card reveal">
+      <img src="https://picsum.photos/seed/suzy-bali/500/400" alt="Rice terraces in Bali">
+      <div class="blog-card-body">
+        <div class="blog-date">June 28, 2026</div>
+        <h3>Sunrise Over the Rice Terraces of Bali</h3>
+        <p>I woke up at 4:30am for this view and I'd do it a hundred times again. Here's my guide to Jatiluwih at golden hour.</p>
+        <a href="./blog.html" class="read-more">Read More &rarr;</a>
+      </div>
+    </article>
+
+    <article class="blog-card reveal">
+      <img src="https://picsum.photos/seed/suzy-hanoi/500/400" alt="Old Quarter streets of Hanoi">
+      <div class="blog-card-body">
+        <div class="blog-date">June 14, 2026</div>
+        <h3>48 Hours Lost in Hanoi's Old Quarter</h3>
+        <p>Motorbikes, steaming bowls of pho, and the best egg coffee I've ever had — a love letter to Vietnam's capital.</p>
+        <a href="./blog.html" class="read-more">Read More &rarr;</a>
+      </div>
+    </article>
+
+    <article class="blog-card reveal">
+      <img src="https://picsum.photos/seed/suzy-marrakech/500/400" alt="Souks of Marrakech">
+      <div class="blog-card-body">
+        <div class="blog-date">May 30, 2026</div>
+        <h3>Getting Gloriously Lost in the Souks of Marrakech</h3>
+        <p>Spice stalls, lantern-lined alleys, and the art of haggling — everything I learned in Morocco's Red City.</p>
+        <a href="./blog.html" class="read-more">Read More &rarr;</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="section" id="about" data-reveal-group>
+  <h2 class="section-title reveal">About Suzy</h2>
+  <p class="section-sub reveal" style="max-width:560px; margin-left:auto; margin-right:auto;">
+    Full-time wanderer, part-time storyteller. I quit my desk job in Lisbon to chase sunsets,
+    street food, and the kind of stories that don't fit in a postcard. Grab a coffee and come along.
+  </p>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-social">
+      <a href="#" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+        </svg>
+      </a>
+      <a href="#" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+          <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+        </svg>
+      </a>
+      <a href="#" aria-label="Twitter / X">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="4" x2="20" y2="20"></line>
+          <line x1="20" y1="4" x2="4" y2="20"></line>
+        </svg>
+      </a>
+    </div>
+    <p class="footer-copyright">&copy; 2026 Wander With Suzy</p>
+    <a href="#" class="footer-top">&uarr; Back to top</a>
+  </div>
+</footer>
+
+<script>
+  // ---------- Nav toggle (mobile) ----------
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => navLinks.classList.remove('open'));
+  });
+
+  // ---------- Location data ----------
+  const locations = [
+    { country: "Portugal", city: "Lisbon", lat: 38.7223, lng: -9.1393, category: "Home Base", desc: "Where it all began. Pastéis de nata and golden-hour sunsets.", seed: "lisbon" },
+    { country: "Japan", city: "Tokyo", lat: 35.6762, lng: 139.6503, category: "Culture", desc: "Cherry blossoms and beautiful, controlled chaos.", seed: "tokyo" },
+    { country: "Thailand", city: "Bangkok", lat: 13.7563, lng: 100.5018, category: "Food", desc: "Street food heaven. Every corner is a new flavor.", seed: "bangkok" },
+    { country: "Morocco", city: "Marrakech", lat: 31.6295, lng: -7.9811, category: "Adventure", desc: "The souks, the colors, the glorious madness.", seed: "marrakech" },
+    { country: "Italy", city: "Amalfi Coast", lat: 40.6340, lng: 14.6027, category: "Culture", desc: "Lemon trees, cliffside drives, and the bluest water.", seed: "amalfi" },
+    { country: "Vietnam", city: "Hanoi", lat: 21.0278, lng: 105.8342, category: "Food", desc: "Motorbikes, steaming pho, and old quarter magic.", seed: "hanoi" },
+    { country: "Greece", city: "Santorini", lat: 36.3932, lng: 25.4615, category: "Culture", desc: "Blue domes and impossible sunsets.", seed: "santorini" },
+    { country: "Indonesia", city: "Bali", lat: -8.3405, lng: 115.0920, category: "Adventure", desc: "Rice terraces at dawn, temple incense, and surf.", seed: "bali" }
+  ];
+
+  // ---------- Map setup ----------
+  const map = L.map('map', { scrollWheelZoom: false }).setView([20, 30], 2);
+
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom',
+    maxZoom: 18
+  }).addTo(map);
+
+  map.on('focus', () => map.scrollWheelZoom.enable());
+  map.on('blur', () => map.scrollWheelZoom.disable());
+
+  const CORAL = "#FF6B6B";
+  const CORAL_DARK = "#E85555";
+
+  const markers = locations.map(loc => {
+    const marker = L.circleMarker([loc.lat, loc.lng], {
+      radius: 11,
+      fillColor: CORAL,
+      color: "#ffffff",
+      weight: 3,
+      fillOpacity: 0.95
+    });
+
+    const popupHtml = `
+      <div class="popup-card">
+        <img src="https://picsum.photos/seed/${loc.seed}/400/300" alt="${loc.city}, ${loc.country}">
+        <div class="popup-body">
+          <span class="popup-tag">${loc.category}</span>
+          <h3>${loc.city}, ${loc.country}</h3>
+          <p>${loc.desc}</p>
+          <a href="./blog.html#${loc.seed}" class="read-more">Read More &rarr;</a>
+        </div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml, { maxWidth: 260, closeButton: true });
+    marker.off('click'); // remove Leaflet's default open-on-click so we can zoom first
+
+    marker.on('mouseover', function(){ this.setStyle({ radius: 14, fillColor: CORAL_DARK }); });
+    marker.on('mouseout', function(){ this.setStyle({ radius: 11, fillColor: CORAL }); });
+
+    marker.on('click', function(){
+      map.flyTo([loc.lat, loc.lng], 6, { animate: true, duration: 1.2 });
+      map.once('moveend', () => marker.openPopup());
+    });
+
+    marker.category = loc.category;
+    return marker;
+  });
+
+  // ---------- Clustering ----------
+  const clusterGroup = L.markerClusterGroup({
+    maxClusterRadius: 60,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    iconCreateFunction: function(cluster){
+      const count = cluster.getChildCount();
+      return L.divIcon({
+        html: `<div class="cluster-badge">${count}</div>`,
+        className: '',
+        iconSize: L.point(40, 40)
+      });
+    }
+  });
+
+  // ---------- Staggered drop-in bounce ----------
+  let dropIndex = 0;
+  function animateDrop(el){
+    if (!el || el.dataset.dropped) return;
+    el.dataset.dropped = "1";
+    el.style.animationDelay = (dropIndex * 90) + 'ms';
+    el.classList.add('pin-drop-anim');
+    dropIndex++;
+  }
+  map.on('layeradd', (e) => {
+    const layer = e.layer;
+    if (layer._path) animateDrop(layer._path);
+    else if (layer._icon) animateDrop(layer._icon.querySelector('.cluster-badge') || layer._icon);
+  });
+
+  markers.forEach(m => clusterGroup.addLayer(m));
+  map.addLayer(clusterGroup);
+
+  // ---------- Filters ----------
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+
+      markers.forEach(m => {
+        const show = filter === 'All' || m.category === filter;
+        if (show && !clusterGroup.hasLayer(m)) clusterGroup.addLayer(m);
+        if (!show && clusterGroup.hasLayer(m)) clusterGroup.removeLayer(m);
+      });
+    });
+  });
+
+  // ---------- Scroll reveal ----------
+  (function(){
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    document.querySelectorAll('[data-reveal-group]').forEach(group => {
+      group.querySelectorAll('.reveal').forEach((el, i) => {
+        el.style.animationDelay = prefersReduced ? '0s' : `${i * 0.12}s`;
+      });
+    });
+
+    if (prefersReduced) {
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('is-visible'));
+      return;
+    }
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+  })();
+</script>
+
+</body>
+</html>

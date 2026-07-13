@@ -1,0 +1,32 @@
+Interactive Map w/ Blog Prompts:
+
+Build a homepage for a travel blogger named Suzy. Cream background (#FFF8F0), coral accents (#FF6B6B), forest green (#2D6A4F). Hero section with her name 'Wander With Suzy' in a display serif font and tagline 'Stories From Every Corner of the World.' Below the hero: an interactive world map using Leaflet.js with custom coral-colored circle markers for these locations: Portugal, Lisbon (38.7223, -9.1393) — 'Where it all began. Pastéis de nata and golden-hour sunsets.' — Home Base Japan, Tokyo (35.6762, 139.6503) — 'Cherry blossoms and beautiful, controlled chaos.' — Culture Thailand, Bangkok (13.7563, 100.5018) — 'Street food heaven. Every corner is a new flavor.' — Food Morocco, Marrakech (31.6295, -7.9811) — 'The souks, the colors, the glorious madness.' — Adventure Italy, Amalfi Coast (40.6340, 14.6027) — 'Lemon trees, cliffside drives, and the bluest water.' — Culture Vietnam, Hanoi (21.0278, 105.8342) — 'Motorbikes, steaming pho, and old quarter magic.' — Food Greece, Santorini (36.3932, 25.4615) — 'Blue domes and impossible sunsets.' — Culture Indonesia, Bali (-8.3405, 115.0920) — 'Rice terraces at dawn, temple incense, and surf.' — Adventure When clicking a pin, show a styled popup card with a photo placeholder (use picsum.photos), country name, description, and a coral 'Read More' link. Above the map: filter buttons for All, Culture, Food, Adventure — clicking a filter shows only matching pins. Below the map: 3 latest blog post cards with thumbnails, titles, dates, and excerpts. Sticky navigation: Home, Blog, About. Fully responsive. File: index.html.
+
+Create blog.html for this travel blog. Same warm theme (cream #FFF8F0, coral #FF6B6B, forest green #2D6A4F), same navigation bar. Display 8 blog post cards in a responsive grid (2 columns on desktop, 1 on mobile). Each card has: a landscape thumbnail placeholder (picsum.photos), post title, publication date, a 2-line excerpt, and a coral 'Read More' link. Add subtle hover effects — slight scale-up and shadow. Fully responsive.
+update home page links to blog to point to the new page.
+update the map read more links so that they go to the blog.html page to an anchor tag where that story is on that page
+
+Create about.html. A hero-style section with Suzy's circular headshot placeholder and name. Below: 2 paragraphs of placeholder bio text about a travel blogger from Lisbon. Then a 'Travel Stats' section with 4 big styled number cards in a row: '8 Countries', '47,000 km', '2 Years', '156 Posts' — each number large and coral-colored with a label below in forest green. Below stats: a newsletter signup section with a heading 'Join the Journey', an email input field, and a coral 'Subscribe' button. When clicked, hide the form and show a success message with a confetti emoji: '🎉 You're in! Check your inbox for adventures.' Same theme and navigation.
+on mobile, the blog page's enter email box is too tall, reduce it to look the same height of a regular text box, retail the curvature design
+
+there is a sticky styling in the mobile view for the navigation that is only present when the user is on Blog or About.  Keep the highlighted text, add for every page, but remove the seperator line when on mobile, keep the seperator line when on full browser view
+
+When a user clicks a map pin, smoothly zoom the map to that pin's location (zoom level 6) before showing the popup. This should be an animated zoom, not a jump
+
+Add marker clustering - when the map is zoomed out, nearby pins should group together into a numbered cluster badge (e.g., a circle showing '3'). When clicked or zoomed in, the cluster breaks apart into individual pins. Use the Leaflet.markercluster plugin from CDN.
+
+Add a subtle bounce animation to each pin when it first appears on the map - they should drop in one by one with a slight delay between each (staggered entrance)
+
+Upgrade the popup cards: the photo should be on top (full-width, 180px tall, object-fit cover, rounded top corners). Below: country name in bold, description in smaller text, and a coral 'Read More →' link. Add a subtle shadow around the popup. The close button should be a small coral circle with a white X.
+
+check the colors on the shadow and the close button. I am not seeing the forest tinted shadow or the coral circle
+
+Please update the map being used to a map that has all of the writing in English
+
+Add scroll-triggered animations across all pages. Elements should fade up gently (translateY 20px to 0, opacity 0 to 1) as the user scrolls down. Use the Intersection Observer API - no external library needed. Stagger the animations so elements appear one after another, not all at once.
+
+Add a consistent footer to all three pages: Suzy's social media icon links (Instagram, YouTube, Twitter/X) in coral, a copyright notice '© 2026 Wander With Suzy', and a small 'Back to top' arrow link. Cream background with a forest green top border.
+
+On the blog page, add a hover effect to the post cards: slight scale-up (1.02), elevated shadow, and the thumbnail image should zoom in slightly (1.05 scale with overflow hidden). Smooth 0.3s transitions.
+
+When the subscribe button is clicked, add a brief celebration: the success message should fade in with a slight bounce animation, and 5-6 small confetti-like dots should burst out from the button position in coral and forest green colors.
