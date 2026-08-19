@@ -17,12 +17,44 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
 
 <style>
+  /*
+   * Wander With Suzy — travel blog homepage. Warm cream/coral/forest
+   * palette. blog.html and about.html embed their own near-identical copy
+   * of the nav/footer/scroll-reveal CSS+JS below — there's no shared
+   * stylesheet/script in this project, so a change to any of those shared
+   * pieces needs to be mirrored in the other two files too.
+   *
+   * WCAG contrast notes — read before changing any color below:
+   *   - --coral (#FF6B6B) is the bright, "headline" brand color. It only
+   *     measures ~2.6-2.8:1 against this site's cream/white backgrounds —
+   *     nowhere close to the 4.5:1 WCAG AA minimum for text, or even the
+   *     3:1 minimum for large text/UI components. It's kept ONLY for two
+   *     genuinely exempt uses (the "Suzy" wordmark in the nav logo and hero
+   *     heading — WCAG explicitly exempts logotype/brand-name text from
+   *     contrast requirements) and for purely decorative elements that
+   *     convey no information on their own (the divider bars).
+   *   - --coral-text (#C23B3B) is a deepened coral used everywhere else
+   *     coral-family color touches real text, icons, or a focus/state
+   *     indicator — nav link hover/current state, read-more links, the
+   *     blog date, footer icons, the stat numbers, the cluster badge, the
+   *     popup close button, the newsletter button/focus ring. It clears
+   *     ~5:1 against this site's backgrounds AND still reads as white text
+   *     on top of it (~5.3:1), so the same token safely covers both "coral
+   *     text on cream" and "white text on a coral fill" roles.
+   *   - --coral-text-hover is one step darker again, for hover/active
+   *     feedback on anything already using --coral-text as its resting
+   *     state.
+   *   - --forest and --ink were already comfortably above 4.5:1 wherever
+   *     they're used — no change needed there.
+   */
   :root{
     --cream:#FFF8F0;
     --coral:#FF6B6B;
-    --coral-dark:#E85555;
+    --coral-text:#C23B3B;
+    --coral-text-hover:#9E2F2F;
     --forest:#2D6A4F;
     --ink:#3A3129;
+    --muted:#746657; /* was #8a7c6d, which measured ~3.9:1 against --cream — under the 4.5:1 minimum for the small text (section subheads, footer copyright) it's used for. This value clears ~5.3:1. */
   }
 
   *{box-sizing:border-box;}
@@ -41,7 +73,70 @@
   a{ text-decoration:none; }
   img{ max-width:100%; display:block; }
 
-  /* ---------- Nav ---------- */
+  /* "sr-only" pattern: keeps content in the accessibility tree (readable by
+     screen readers, reachable by keyboard) while removing it from visual
+     layout entirely. Used below for the skip link and the newsletter
+     email field's label on about.html — not used on this page directly,
+     kept here for parity with the other two files. */
+  .visually-hidden{
+    position:absolute;
+    width:1px; height:1px;
+    padding:0; margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+
+  /* Skip-to-content link (WCAG 2.4.1 Bypass Blocks). Parked off-screen
+     above the viewport until it receives keyboard focus — see :focus below
+     — so it never affects layout for mouse/touch users. Must stay the
+     very first focusable element on the page, and its href must keep
+     pointing at <main id="main-content"> below. */
+  .skip-link{
+    position:fixed;
+    top:-60px; left:16px;
+    z-index:3000;
+    background:var(--forest);
+    color:#fff;
+    font-weight:600;
+    font-size:0.9rem;
+    padding:12px 20px;
+    border-radius:8px;
+    transition:top .2s ease;
+  }
+  .skip-link:focus{
+    top:16px;
+    outline:2px solid var(--forest);
+    outline-offset:3px;
+  }
+
+  /* Focus indicators (WCAG 2.4.7 Focus Visible). Nothing on this site
+     defined a custom focus style before. --forest is used here (rather
+     than introducing yet another color) since it's already proven to
+     clear AA contrast against this site's cream/white backgrounds
+     wherever it appears as text. :focus-visible (not plain :focus) means
+     a mouse click won't show the ring, only keyboard/AT focus. The
+     newsletter email input (about.html) defines its own focus style
+     instead — a border-color change reads better on a pill-shaped input
+     — so it's deliberately not covered by this generic rule. */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible{
+    outline:2px solid var(--forest);
+    outline-offset:3px;
+    border-radius:4px;
+  }
+
+  /* ---------- Nav ----------
+     Desktop: inline link list. Below the 640px breakpoint (see the
+     responsive block near the bottom of this file) .nav-links collapses
+     and is revealed by tapping the hamburger; that toggle is wired up in
+     the script below via the #navToggle / #navLinks ids — don't rename
+     either id without updating the script. aria-expanded/aria-controls on
+     the button, and the JS that keeps them in sync, are what make this an
+     accessible disclosure widget rather than just a visual effect (WCAG
+     4.1.2 Name, Role, Value). */
   header.nav{
     position:sticky;
     top:0;
@@ -58,6 +153,8 @@
     align-items:center;
     justify-content:space-between;
   }
+  /* .nav-logo/span is the "Wander With Suzy" wordmark — exempt from the
+     coral contrast rule above (WCAG's logotype exception). */
   .nav-logo{
     font-family:'Playfair Display', serif;
     font-weight:700;
@@ -80,14 +177,14 @@
     padding:4px 2px;
     transition:color .2s ease;
   }
-  .nav-links a:hover{ color:var(--coral); }
-  .nav-links a.current{ color:var(--coral); }
+  .nav-links a:hover{ color:var(--coral-text); }
+  .nav-links a.current{ color:var(--coral-text); }
   .nav-links a::after{
     content:"";
     position:absolute;
     left:0; bottom:-2px;
     width:0; height:2px;
-    background:var(--coral);
+    background:var(--coral-text); /* conveys real hover/current state, not purely decorative like the hero divider, so it gets the AA-safe color too */
     transition:width .25s ease;
   }
   .nav-links a:hover::after, .nav-links a.current::after{ width:100%; }
@@ -120,15 +217,20 @@
     margin:0 0 18px;
     letter-spacing:-0.5px;
   }
+  /* Also the "Suzy" wordmark, same logotype exception as .nav-logo span
+     above. */
   .hero h1 .accent{ color:var(--coral); }
   .hero p.tagline{
     font-size:clamp(1.05rem, 2vw, 1.35rem);
-    color:#6b5f52;
+    color:var(--muted);
     font-weight:300;
     max-width:560px;
     margin:0 auto;
     letter-spacing:0.3px;
   }
+  /* Purely decorative rule with no text/information of its own — unlike
+     the nav underline above, there's nothing here for a contrast failure
+     to obscure, so it's left at the brighter --coral. */
   .hero .divider{
     width:64px; height:3px;
     background:var(--coral);
@@ -150,7 +252,7 @@
   }
   .section-sub{
     text-align:center;
-    color:#8a7c6d;
+    color:var(--muted);
     font-size:0.95rem;
     margin:0 0 36px;
     font-weight:300;
@@ -180,8 +282,8 @@
     background:rgba(45,106,79,0.08);
   }
   .filter-btn.active{
-    background:var(--coral);
-    border-color:var(--coral);
+    background:var(--coral-text); /* was --coral; white text on plain coral only measured ~2.8:1 */
+    border-color:var(--coral-text);
     color:#fff;
   }
 
@@ -199,7 +301,7 @@
   }
 
   .cluster-badge{
-    background:var(--coral);
+    background:var(--coral-text); /* was --coral; this is a real number ("3", "5"...), not decoration, so it needs real text contrast under its white digits */
     color:#fff;
     width:100%;
     height:100%;
@@ -210,7 +312,7 @@
     font-family:'Poppins', sans-serif;
     font-weight:600;
     font-size:0.95rem;
-    box-shadow:0 0 0 6px rgba(255,107,107,0.25);
+    box-shadow:0 0 0 6px rgba(194,59,59,0.25);
     transform-origin:50% 50%;
   }
 
@@ -246,7 +348,7 @@
     height:24px !important;
     line-height:22px !important;
     text-align:center !important;
-    background:var(--coral) !important;
+    background:var(--coral-text) !important; /* was --coral; white "×" on plain coral only measured ~2.8:1 */
     color:#fff !important;
     border-radius:50% !important;
     font-size:16px !important;
@@ -258,7 +360,7 @@
   }
   .leaflet-container a.leaflet-popup-close-button:hover,
   .leaflet-container a.leaflet-popup-close-button:focus{
-    background:var(--coral-dark) !important;
+    background:var(--coral-text-hover) !important;
     color:#fff !important;
     transform:scale(1.08);
   }
@@ -294,11 +396,11 @@
   .popup-card p{
     margin:0 0 10px;
     font-size:0.82rem;
-    color:#6b5f52;
+    color:var(--muted);
     line-height:1.5;
   }
   .popup-card .read-more{
-    color:var(--coral);
+    color:var(--coral-text); /* was --coral */
     font-weight:600;
     font-size:0.85rem;
     display:inline-flex;
@@ -332,7 +434,7 @@
   .blog-card-body{ padding:20px; }
   .blog-date{
     font-size:0.75rem;
-    color:var(--coral);
+    color:var(--coral-text); /* was --coral */
     font-weight:600;
     letter-spacing:0.5px;
     text-transform:uppercase;
@@ -346,16 +448,19 @@
   .blog-card p{
     margin:0 0 14px;
     font-size:0.88rem;
-    color:#6b5f52;
+    color:var(--muted);
   }
   .blog-card .read-more{
-    color:var(--coral);
+    color:var(--coral-text); /* was --coral */
     font-weight:600;
     font-size:0.85rem;
   }
   .blog-card .read-more:hover{ text-decoration:underline; }
 
-  /* ---------- Scroll reveal ---------- */
+  /* ---------- Scroll reveal ----------
+     Elements fade up into view once via IntersectionObserver — see the
+     script below. Already had a prefers-reduced-motion override when this
+     page was built; kept as-is, it was correct. */
   @keyframes fade-up{
     from{ opacity:0; transform:translateY(20px); }
     to{ opacity:1; transform:translateY(0); }
@@ -364,6 +469,11 @@
   .reveal.is-visible{ animation:fade-up .6s ease both; }
   @media (prefers-reduced-motion: reduce){
     .reveal{ opacity:1; transform:none; animation:none; }
+    /* Extends the same "no motion" preference to smooth-scroll anchor
+       jumps (e.g. the skip link, footer "Back to top") and the map's own
+       pan/zoom animations — see the map JS below for flyTo/zoomAnimation.
+       These weren't covered by the original reveal-only media query. */
+    html{ scroll-behavior:auto; }
   }
 
   /* ---------- Footer ---------- */
@@ -390,15 +500,15 @@
     width:38px;
     height:38px;
     border-radius:50%;
-    border:1.5px solid var(--coral);
-    color:var(--coral);
+    border:1.5px solid var(--coral-text); /* was --coral */
+    color:var(--coral-text);
     display:inline-flex;
     align-items:center;
     justify-content:center;
     transition:background .2s ease, color .2s ease, transform .2s ease;
   }
   .footer-social a:hover{
-    background:var(--coral);
+    background:var(--coral-text);
     color:#fff;
     transform:translateY(-3px);
   }
@@ -406,12 +516,12 @@
   .footer-copyright{
     margin:0;
     font-size:0.85rem;
-    color:#8a7c6d;
+    color:var(--muted);
   }
   .footer-top{
     font-size:0.82rem;
     font-weight:600;
-    color:var(--coral);
+    color:var(--coral-text); /* was --coral */
     display:inline-flex;
     align-items:center;
     gap:4px;
@@ -424,6 +534,14 @@
   }
 
   @media (max-width: 640px){
+    /* visibility is the load-bearing addition here (paired with the
+       existing max-height:0/overflow:hidden collapse): CSS max-height and
+       overflow don't remove a clipped element from the tab order, only
+       from view. Without this, all three nav links would remain real,
+       reachable Tab stops — invisibly clipped to zero height — any time
+       the menu is closed on a narrow screen. .nav-links.open below
+       restores visibility only while the menu is actually meant to be
+       usable. */
     .nav-links{
       position:absolute;
       top:100%; left:0; right:0;
@@ -432,11 +550,16 @@
       align-items:center;
       gap:0;
       max-height:0;
+      visibility:hidden;
       overflow:hidden;
-      transition:max-height .3s ease;
+      transition:max-height .3s ease, visibility 0s linear .3s;
       border-bottom:1px solid rgba(45,106,79,0.15);
     }
-    .nav-links.open{ max-height:220px; }
+    .nav-links.open{
+      max-height:220px;
+      visibility:visible;
+      transition:max-height .3s ease;
+    }
     .nav-links li{ width:100%; text-align:center; }
     .nav-links a{
       display:block;
@@ -455,19 +578,31 @@
 </head>
 <body>
 
+<!-- Skip-to-content link. Must stay the first focusable element on the
+     page. -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <header class="nav">
   <div class="nav-inner">
     <a href="#home" class="nav-logo">Wander <span>With Suzy</span></a>
-    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+    <!-- aria-expanded starts "false" to match #navLinks starting closed;
+         the script below flips it to "true"/"false" every time the menu
+         is toggled or a link inside it is clicked. -->
+    <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navLinks">
       <span></span><span></span><span></span>
     </button>
     <ul class="nav-links" id="navLinks">
-      <li><a href="#home" class="current">Home</a></li>
+      <li><a href="#home" class="current" aria-current="page">Home</a></li>
       <li><a href="./blog.html">Blog</a></li>
       <li><a href="./about.html">About</a></li>
     </ul>
   </div>
 </header>
+
+<!-- tabindex="-1" lets the skip link above move keyboard focus straight to
+     <main> (elements aren't focusable by default) without adding it to the
+     normal Tab order — it's only ever focused programmatically. -->
+<main id="main-content" tabindex="-1">
 
 <section class="hero" id="home" data-reveal-group>
   <h1 class="reveal">Wander <span class="accent">With Suzy</span></h1>
@@ -479,15 +614,26 @@
   <h2 class="section-title reveal">Where I've Been</h2>
   <p class="section-sub reveal">Click a pin to read the story behind it.</p>
 
-  <div class="filters" id="filters">
-    <button class="filter-btn active reveal" data-filter="All">All</button>
-    <button class="filter-btn reveal" data-filter="Culture">Culture</button>
-    <button class="filter-btn reveal" data-filter="Food">Food</button>
-    <button class="filter-btn reveal" data-filter="Adventure">Adventure</button>
+  <!-- role="group" + aria-label give this button row a name distinct from
+       the page's other controls; aria-pressed on each button (set/kept in
+       sync by the script below) exposes which filter is currently active
+       to screen readers, the same information the .active background
+       color conveys visually (WCAG 4.1.2). -->
+  <div class="filters" id="filters" role="group" aria-label="Filter locations by category">
+    <button type="button" class="filter-btn active reveal" data-filter="All" aria-pressed="true">All</button>
+    <button type="button" class="filter-btn reveal" data-filter="Culture" aria-pressed="false">Culture</button>
+    <button type="button" class="filter-btn reveal" data-filter="Food" aria-pressed="false">Food</button>
+    <button type="button" class="filter-btn reveal" data-filter="Adventure" aria-pressed="false">Adventure</button>
   </div>
 
+  <!-- aria-label gives screen-reader users context for this region before
+       they reach it — an interactive map has no other obvious accessible
+       name of its own. See the script below for how each pin is made
+       keyboard-operable (role="button"/tabindex/keydown on the marker's
+       underlying SVG path) and how opening a pin's popup moves focus into
+       it. -->
   <div class="map-wrap reveal">
-    <div id="map"></div>
+    <div id="map" role="region" aria-label="Interactive map of travel destinations"></div>
   </div>
 </section>
 
@@ -536,24 +682,30 @@
   </p>
 </section>
 
+</main>
+
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-social">
+      <!-- Decorative icons: aria-hidden since each parent <a> already has
+           its own aria-label giving the link a full accessible name —
+           without aria-hidden, some screen readers would also try to
+           describe the raw SVG path data. -->
       <a href="#" aria-label="Instagram">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
           <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
           <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
         </svg>
       </a>
       <a href="#" aria-label="YouTube">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
           <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
         </svg>
       </a>
       <a href="#" aria-label="Twitter / X">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
           <line x1="4" y1="4" x2="20" y2="20"></line>
           <line x1="20" y1="4" x2="4" y2="20"></line>
         </svg>
@@ -566,14 +718,37 @@
 
 <script>
   // ---------- Nav toggle (mobile) ----------
+  // #navToggle is a disclosure-widget button for #navLinks. aria-expanded
+  // is kept in sync on every open/close so screen-reader users know
+  // whether the menu is currently showing — the visual-only slide/collapse
+  // means nothing to them on its own (WCAG 4.1.2).
   const navToggle = document.getElementById('navToggle');
   const navLinks = document.getElementById('navLinks');
-  navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+  navToggle.addEventListener('click', () => {
+    const isOpen = navLinks.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', String(isOpen));
+  });
   navLinks.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => navLinks.classList.remove('open'));
+    link.addEventListener('click', () => {
+      navLinks.classList.remove('open');
+      navToggle.setAttribute('aria-expanded', 'false');
+    });
   });
 
+  // Respected by both the map's flyTo/zoom animations and the pin drop-in
+  // animation below, alongside the existing reveal-animation check further
+  // down (WCAG 2.2.2 / spirit of 2.3.3).
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // ---------- Location data ----------
+  // Adjustable: add/remove/edit destinations here. `category` must be one
+  // of "Culture", "Food", "Adventure", or the special "Home Base" (which
+  // intentionally matches none of the filter buttons below, so Lisbon
+  // always stays visible regardless of which filter is active — that's
+  // deliberate, not a bug, since it's Suzy's home base rather than a trip).
+  // `seed` feeds both the picsum.photos placeholder image and the matching
+  // #id anchor on blog.html that each popup's "Read More" link jumps to —
+  // if you rename a seed, update the matching id="..." on blog.html too.
   const locations = [
     { country: "Portugal", city: "Lisbon", lat: 38.7223, lng: -9.1393, category: "Home Base", desc: "Where it all began. Pastéis de nata and golden-hour sunsets.", seed: "lisbon" },
     { country: "Japan", city: "Tokyo", lat: 35.6762, lng: 139.6503, category: "Culture", desc: "Cherry blossoms and beautiful, controlled chaos.", seed: "tokyo" },
@@ -586,8 +761,20 @@
   ];
 
   // ---------- Map setup ----------
-  const map = L.map('map', { scrollWheelZoom: false }).setView([20, 30], 2);
+  // scrollWheelZoom starts disabled and is only enabled while the map has
+  // focus (see the focus/blur handlers below) — otherwise scrolling the
+  // page past the map would accidentally zoom it instead. zoomAnimation/
+  // markerZoomAnimation are turned off under reduced motion so Leaflet's
+  // own internal pan/zoom easing is skipped too, not just this file's own
+  // animations.
+  const map = L.map('map', {
+    scrollWheelZoom: false,
+    zoomAnimation: !prefersReducedMotion,
+    markerZoomAnimation: !prefersReducedMotion
+  }).setView([20, 30], 2);
 
+  // English-labeled basemap (Esri's World Street Map) rather than a tile
+  // set that renders place names in the local script everywhere.
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom',
     maxZoom: 18
@@ -597,7 +784,32 @@
   map.on('blur', () => map.scrollWheelZoom.disable());
 
   const CORAL = "#FF6B6B";
-  const CORAL_DARK = "#E85555";
+  const CORAL_TEXT = "#C23B3B"; // matches --coral-text; used on hover since the darkened marker needs to stay distinguishable against the same white 3px ring
+
+  // Opens a location's popup: flies the map to it first (unless reduced
+  // motion is preferred, in which case it jumps instantly), then opens the
+  // popup once the pan/zoom settles. `viaKeyboard` additionally moves
+  // focus into the popup once it's open (to its close button) — that step
+  // is skipped for mouse clicks, since a mouse user doesn't need their
+  // focus relocated the way a keyboard user does to keep interacting with
+  // the new content (WCAG 2.4.3 Focus Order).
+  function activateMarker(loc, marker, viaKeyboard){
+    map.flyTo([loc.lat, loc.lng], 6, { animate: !prefersReducedMotion, duration: 1.2 });
+    map.once('moveend', () => {
+      // The listener has to be registered *before* openPopup() is called,
+      // not after: Leaflet fires 'popupopen' synchronously from inside
+      // that call, so a listener added afterwards would miss it entirely
+      // (this was a real bug caught by testing — the popup opened
+      // correctly but focus never actually moved).
+      if (viaKeyboard) {
+        map.once('popupopen', (e) => {
+          const closeBtn = e.popup._container.querySelector('.leaflet-popup-close-button');
+          if (closeBtn) closeBtn.focus();
+        });
+      }
+      marker.openPopup();
+    });
+  }
 
   const markers = locations.map(loc => {
     const marker = L.circleMarker([loc.lat, loc.lng], {
@@ -622,15 +834,13 @@
     marker.bindPopup(popupHtml, { maxWidth: 260, closeButton: true });
     marker.off('click'); // remove Leaflet's default open-on-click so we can zoom first
 
-    marker.on('mouseover', function(){ this.setStyle({ radius: 14, fillColor: CORAL_DARK }); });
+    marker.on('mouseover', function(){ this.setStyle({ radius: 14, fillColor: CORAL_TEXT }); });
     marker.on('mouseout', function(){ this.setStyle({ radius: 11, fillColor: CORAL }); });
 
-    marker.on('click', function(){
-      map.flyTo([loc.lat, loc.lng], 6, { animate: true, duration: 1.2 });
-      map.once('moveend', () => marker.openPopup());
-    });
+    marker.on('click', function(){ activateMarker(loc, marker, false); });
 
     marker.category = loc.category;
+    marker.locLabel = `${loc.city}, ${loc.country} — ${loc.category}`;
     return marker;
   });
 
@@ -649,30 +859,72 @@
     }
   });
 
-  // ---------- Staggered drop-in bounce ----------
+  // ---------- Staggered drop-in bounce + marker keyboard support ----------
+  // Both live in the same 'layeradd' handler because that's the one point
+  // where Leaflet has just created the marker's underlying DOM node
+  // (layer._path for an individual circle marker, layer._icon for a
+  // cluster badge) — there's nothing to animate or attach keyboard
+  // handlers to before this fires.
   let dropIndex = 0;
   function animateDrop(el){
-    if (!el || el.dataset.dropped) return;
+    if (!el || el.dataset.dropped || prefersReducedMotion) return;
     el.dataset.dropped = "1";
     el.style.animationDelay = (dropIndex * 90) + 'ms';
     el.classList.add('pin-drop-anim');
     dropIndex++;
   }
+
+  // Individual location pins render as an SVG <path> (via L.CircleMarker),
+  // which — unlike Leaflet's icon-based L.Marker — does NOT get keyboard
+  // focus support by default. Without this, a keyboard-only user could see
+  // the pins but never actually open one (WCAG 2.1.1 Keyboard). Cluster
+  // badges don't need the same treatment: they're internally built on
+  // L.Marker, which Leaflet already makes keyboard-operable (tabindex +
+  // Enter/Space to zoom into the cluster) out of the box.
+  function makePathKeyboardAccessible(path, marker, loc){
+    if (!path || path.dataset.a11yBound) return;
+    path.dataset.a11yBound = "1";
+    path.setAttribute('tabindex', '0');
+    path.setAttribute('role', 'button');
+    path.setAttribute('aria-label', `View story: ${marker.locLabel}`);
+    path.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        activateMarker(loc, marker, true);
+      }
+    });
+  }
+
   map.on('layeradd', (e) => {
     const layer = e.layer;
-    if (layer._path) animateDrop(layer._path);
-    else if (layer._icon) animateDrop(layer._icon.querySelector('.cluster-badge') || layer._icon);
+    if (layer._path) {
+      animateDrop(layer._path);
+      // markers and locations were built in the same order (see the
+      // locations.map() call above), so this index lookup reliably finds
+      // the location data that matches this particular marker layer.
+      const matchedLoc = locations[markers.indexOf(layer)];
+      if (matchedLoc) makePathKeyboardAccessible(layer._path, layer, matchedLoc);
+    } else if (layer._icon) {
+      animateDrop(layer._icon.querySelector('.cluster-badge') || layer._icon);
+    }
   });
 
   markers.forEach(m => clusterGroup.addLayer(m));
   map.addLayer(clusterGroup);
 
   // ---------- Filters ----------
+  // aria-pressed is kept in sync with the .active class on every click so
+  // screen readers know which filter is currently applied, not just
+  // sighted users via the background-color change (WCAG 4.1.2).
   const filterButtons = document.querySelectorAll('.filter-btn');
   filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      filterButtons.forEach(b => b.classList.remove('active'));
+      filterButtons.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
       const filter = btn.dataset.filter;
 
       markers.forEach(m => {
@@ -685,15 +937,13 @@
 
   // ---------- Scroll reveal ----------
   (function(){
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
     document.querySelectorAll('[data-reveal-group]').forEach(group => {
       group.querySelectorAll('.reveal').forEach((el, i) => {
-        el.style.animationDelay = prefersReduced ? '0s' : `${i * 0.12}s`;
+        el.style.animationDelay = prefersReducedMotion ? '0s' : `${i * 0.12}s`;
       });
     });
 
-    if (prefersReduced) {
+    if (prefersReducedMotion) {
       document.querySelectorAll('.reveal').forEach(el => el.classList.add('is-visible'));
       return;
     }
